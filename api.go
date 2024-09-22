@@ -44,7 +44,7 @@ func NewAuthorizedClient(userSecret, deviceID string) *AuthorizedClient {
 }
 
 // Helper method to make HTTP requests
-func (pc *PushoverClient) doRequest(method, urlStr string, body io.Reader, headers map[string]string) ([]byte, error) {
+func doRequest(method, urlStr string, body io.Reader, headers map[string]string) ([]byte, error) {
 	client := &http.Client{}
 
 	req, err := http.NewRequest(method, urlStr, body)
@@ -93,7 +93,7 @@ func (pc *PushoverClient) Login(username, password, twofa string) (*LoginRespons
 	u := pc.GetApiURL()
 	u.Path = path.Join(u.Path, "/users/login.json")
 
-	respBody, err := pc.doRequest("POST", u.String(), body, headers)
+	respBody, err := doRequest("POST", u.String(), body, headers)
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +126,7 @@ func (pc *PushoverClient) Register(secret, name string) (*RegistrationResponse, 
 	u := pc.GetApiURL()
 	u.Path = path.Join(u.Path, "devices.json")
 
-	respBody, err := pc.doRequest("POST", u.String(), body, headers)
+	respBody, err := doRequest("POST", u.String(), body, headers)
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +159,7 @@ func (pc *PushoverClient) DownloadMessages(secret, deviceID string) (*DownloadRe
 
 	headers := map[string]string{}
 
-	respBody, err := pc.doRequest("GET", u.String(), nil, headers)
+	respBody, err := doRequest("GET", u.String(), nil, headers)
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +195,7 @@ func (pc *PushoverClient) DeleteMessages(secret, deviceID string, id int64) (*De
 	u := pc.GetApiURL()
 	u.Path = path.Join(u.Path, "devices", deviceID, "update_highest_message.json")
 
-	respBody, err := pc.doRequest("POST", u.String(), body, headers)
+	respBody, err := doRequest("POST", u.String(), body, headers)
 	if err != nil {
 		return nil, err
 	}
