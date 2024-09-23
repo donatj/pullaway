@@ -10,6 +10,7 @@ import (
 	"text/template"
 
 	"github.com/donatj/pullaway"
+	"github.com/gen2brain/beeep"
 	"github.com/google/subcommands"
 )
 
@@ -30,13 +31,13 @@ func (*listenCmd) Usage() string {
 }
 
 func (st *listenCmd) SetFlags(f *flag.FlagSet) {
-	f.StringVar(&st.format, "format", "json", "Output format: json, text, or template")
+	f.StringVar(&st.format, "format", "json", "Output format: json, text, template or notification")
 	f.StringVar(&st.templateStr, "template", "", "Go template for formatting output (used with -format=template)")
 }
 
 func (st *listenCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
 	if st.ac == nil {
-		log.Println("No authorized client found. Please run `init` first.")
+		log.Println("No authorized client found. Please run 'init' first.")
 		return subcommands.ExitFailure
 	}
 
@@ -85,6 +86,8 @@ func (st *listenCmd) initDisplayFunc() (func(*pullaway.Messages) error, error) {
 		return displayMessageJSON, nil
 	case "text":
 		return displayMessageText, nil
+	case "notification":
+		return displayMessageNotification, nil
 	case "template":
 		if st.templateStr == "" {
 			return nil, fmt.Errorf("template string must be provided when format is 'template'")
@@ -115,6 +118,12 @@ func displayMessageText(m *pullaway.Messages) error {
 		fmt.Printf(" - URL: %s", m.URL)
 	}
 	fmt.Println()
+
+	return nil
+}
+
+func displayMessageNotification(m *pullaway.Messages) error {
+	beeep.Notify(fmt.Sprintf("%s: %s", m.App, m.Title), m.Message, "")
 
 	return nil
 }
