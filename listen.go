@@ -3,7 +3,7 @@ package pullaway
 import (
 	"errors"
 	"fmt"
-	"log"
+	"io"
 	"log/slog"
 	"time"
 
@@ -14,32 +14,57 @@ var (
 	ErrWebsocketConnectFail = fmt.Errorf("error connecting to WebSocket")
 	ErrWebsocketLoginFail   = fmt.Errorf("error logging in to WebSocket")
 	ErrWebsocketReadFail    = fmt.Errorf("error reading from WebSocket")
-	ErrNeedReconnect        = fmt.Errorf("need to reconnect")
-	ErrWebsocketPermanent   = fmt.Errorf("permanent error")
-	ErrSessionIssue         = fmt.Errorf("session issue")
+
+	ErrNeedReconnect  = fmt.Errorf("need to reconnect")
+	ErrPermanentIssue = fmt.Errorf("permanent error")
+	ErrSessionIssue   = fmt.Errorf("session issue")
 )
 
-func ListenWithReconnect(deviceID string, secret string, ml MessageCallback) error {
+// LeveledLogger is an interface for loggers or logger wrappers that support leveled logging.
+// The methods take a message string and optional variadic key-value pairs.
+type LeveledLogger interface {
+	Error(string, ...interface{})
+	Info(string, ...interface{})
+	Debug(string, ...interface{})
+	Warn(string, ...interface{})
+}
+
+type Listener struct {
+	Log LeveledLogger
+}
+
+func NewListener(l LeveledLogger) *Listener {
+	if l == nil {
+		l = slog.New(slog.NewTextHandler(io.Discard, nil))
+	}
+
+	return &Listener{
+		Log: l,
+	}
+}
+
+func (l *Listener) ListenWithReconnect(deviceID string, secret string, ml MessageCallback) error {
 connect:
 	for {
-		err := Listen(deviceID, secret, ml)
-		if errors.Is(err, ErrWebsocketPermanent) || errors.Is(err, ErrSessionIssue) {
-			return err
+		err := l.Listen(deviceID, secret, ml)
+		if errors.Is(err, ErrPermanentIssue) || errors.Is(err, ErrSessionIssue) {
+			return fmt.Errorf("listen error: %w", err)
 		}
 
 		if errors.Is(err, ErrNeedReconnect) {
+			l.Log.Info("reconnecting on request", "error", err.Error())
 			time.Sleep(5 * time.Second)
 			continue connect
 		}
 
+		l.Log.Error("error listening to WebSocket", "error", err.Error())
 		time.Sleep(15 * time.Second)
-		slog.Error("error listening to WebSocket", slog.String("error", err.Error()))
 	}
 }
 
 type MessageCallback func() error
 
-func Listen(deviceID string, secret string, ml MessageCallback) error {
+func (l *Listener) Listen(deviceID string, secret string, ml MessageCallback) error {
 	origin := "http://localhost/"
 	url := "wss://client.pushover.net/push"
 
@@ -50,7 +75,7 @@ func Listen(deviceID string, secret string, ml MessageCallback) error {
 	}
 	defer ws.Close()
 
-	slog.Info("connected to WebSocket")
+	l.Log.Debug("connected to WebSocket")
 
 	loginMessage := fmt.Sprintf("login:%s:%s\n", deviceID, secret)
 	_, err = ws.Write([]byte(loginMessage))
@@ -66,8 +91,7 @@ func Listen(deviceID string, secret string, ml MessageCallback) error {
 			return errors.Join(ErrWebsocketReadFail, err)
 		}
 
-		// Print the message received
-		log.Printf("Received: %s\n", msg[:n])
+		l.Log.Debug("received message", "message", string(msg[:n]))
 
 		for _, m := range msg[:n] {
 			switch m {
@@ -80,12 +104,44 @@ func Listen(deviceID string, secret string, ml MessageCallback) error {
 			case 'R': // Reconnect
 				return ErrNeedReconnect
 			case 'E': // Error, Permanent
-				return ErrWebsocketPermanent
+				return ErrPermanentIssue
 			case 'A': // Error, Session Closed
 				return ErrSessionIssue
 			default:
-				log.Printf("Unknown message: %s\n", string(m))
+				l.Log.Warn("unknown message", "message", string(m))
 			}
 		}
 	}
+}
+
+var DefaultListener = &Listener{
+	Log: slog.New(slog.NewTextHandler(io.Discard, nil)),
+}
+
+func ListenWithReconnect(deviceID string, secret string, ml MessageCallback) error {
+	return DefaultListener.ListenWithReconnect(deviceID, secret, ml)
+}
+
+func Listen(deviceID string, secret string, ml MessageCallback) error {
+	return DefaultListener.Listen(deviceID, secret, ml)
+}
+
+type AuthorizedListener struct {
+	*AuthorizedClient
+	*Listener
+}
+
+func NewAuthorizedListener(ac *AuthorizedClient, l LeveledLogger) *AuthorizedListener {
+	return &AuthorizedListener{
+		AuthorizedClient: ac,
+		Listener:         NewListener(l),
+	}
+}
+
+func (al *AuthorizedListener) ListenWithReconnect(ml MessageCallback) error {
+	return al.Listener.ListenWithReconnect(al.DeviceID, al.UserSecret, ml)
+}
+
+func (al *AuthorizedListener) Listen(ml MessageCallback) error {
+	return al.Listener.Listen(al.DeviceID, al.UserSecret, ml)
 }

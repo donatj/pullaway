@@ -13,6 +13,7 @@ import (
 
 type listenCmd struct {
 	ac *pullaway.AuthorizedClient
+	l  pullaway.LeveledLogger
 }
 
 func (*listenCmd) Name() string     { return "listen" }
@@ -45,7 +46,9 @@ func (st *listenCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{
 
 	downloadAndDisplay()
 
-	err := pullaway.ListenWithReconnect(st.ac.DeviceID, st.ac.UserSecret, downloadAndDisplay)
+	listener := st.ac.GetAuthorizedListener(st.l)
+
+	err := listener.ListenWithReconnect(downloadAndDisplay)
 	if err != nil {
 		log.Printf("Error listening: %v", err)
 		return subcommands.ExitFailure

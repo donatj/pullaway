@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"log"
+	"log/slog"
 	"os"
 
 	"github.com/donatj/pullaway"
@@ -35,7 +36,9 @@ func main() {
 		ac = pullaway.NewAuthorizedClient(secret, deviceID)
 	}
 
-	subcommands.Register(&listenCmd{ac}, "")
+	l := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
+	subcommands.Register(&listenCmd{ac, l}, "")
 
 	flag.Parse()
 	ctx := context.Background()
