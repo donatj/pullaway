@@ -36,9 +36,14 @@ func main() {
 		ac = pullaway.NewAuthorizedClient(secret, deviceID)
 	}
 
-	l := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	l := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	}))
 
-	subcommands.Register(&listenCmd{ac, l}, "")
+	subcommands.Register(&listenCmd{
+		ac: ac,
+		l:  l,
+	}, "")
 
 	flag.Parse()
 	ctx := context.Background()

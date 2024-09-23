@@ -75,7 +75,7 @@ func (l *Listener) Listen(deviceID string, secret string, ml MessageCallback) er
 	}
 	defer ws.Close()
 
-	l.Log.Debug("connected to WebSocket")
+	l.Log.Info("listening to WebSocket", "url", url)
 
 	loginMessage := fmt.Sprintf("login:%s:%s\n", deviceID, secret)
 	_, err = ws.Write([]byte(loginMessage))
