@@ -15,7 +15,7 @@ type PushoverClient struct {
 	APIURL string
 }
 
-func (pc *PushoverClient) GetApiURL() url.URL {
+func (pc *PushoverClient) GetApiURL() (url.URL, error) {
 	purl := "https://api.pushover.net/1"
 	if pc != nil && pc.APIURL != "" {
 		purl = pc.APIURL
@@ -23,17 +23,25 @@ func (pc *PushoverClient) GetApiURL() url.URL {
 
 	u, err := url.Parse(purl)
 	if err != nil {
-		panic(err)
+		return url.URL{}, err
 	}
-	return *u
+	return *u, nil
 }
 
 func (pc *PushoverClient) Login(username, password, twofa string) (*LoginResponse, error) {
-	return Login(pc.GetApiURL(), username, password, twofa)
+	apiURL, err := pc.GetApiURL()
+	if err != nil {
+		return nil, err
+	}
+	return Login(apiURL, username, password, twofa)
 }
 
 func (pc *PushoverClient) Register(secret, name string) (*RegistrationResponse, error) {
-	return Register(pc.GetApiURL(), secret, name)
+	apiURL, err := pc.GetApiURL()
+	if err != nil {
+		return nil, err
+	}
+	return Register(apiURL, secret, name)
 }
 
 type AuthorizedClient struct {
@@ -52,15 +60,27 @@ func NewAuthorizedClient(userSecret, deviceID string) *AuthorizedClient {
 }
 
 func (ac *AuthorizedClient) DownloadMessages() (*DownloadResponse, error) {
-	return DownloadMessages(ac.GetApiURL(), ac.UserSecret, ac.DeviceID)
+	apiURL, err := ac.GetApiURL()
+	if err != nil {
+		return nil, err
+	}
+	return DownloadMessages(apiURL, ac.UserSecret, ac.DeviceID)
 }
 
 func (ac *AuthorizedClient) DeleteMessages(id int64) (*DeleteResponse, error) {
-	return DeleteMessages(ac.GetApiURL(), ac.UserSecret, ac.DeviceID, id)
+	apiURL, err := ac.GetApiURL()
+	if err != nil {
+		return nil, err
+	}
+	return DeleteMessages(apiURL, ac.UserSecret, ac.DeviceID, id)
 }
 
 func (ac *AuthorizedClient) DownloadAndDeleteMessages() (*DownloadResponse, *DeleteResponse, error) {
 	return ac.PushoverClient.DownloadAndDeleteMessages(ac.UserSecret, ac.DeviceID)
+}
+
+func (ac *AuthorizedClient) GetAuthorizedListener(l LeveledLogger) *AuthorizedListener {
+	return NewAuthorizedListener(ac, l)
 }
 
 // Helper method to make HTTP requests
@@ -222,12 +242,17 @@ func DeleteMessages(api url.URL, secret, deviceID string, id int64) (*DeleteResp
 }
 
 func (pc *PushoverClient) DownloadAndDeleteMessages(secret, deviceID string) (*DownloadResponse, *DeleteResponse, error) {
-	dr, err := DownloadMessages(pc.GetApiURL(), secret, deviceID)
+	apiURL, err := pc.GetApiURL()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	dr, err := DownloadMessages(apiURL, secret, deviceID)
 	if err != nil {
 		return dr, nil, err
 	}
 
-	dm, err := DeleteMessages(pc.GetApiURL(), secret, deviceID, dr.MaxID())
+	dm, err := DeleteMessages(apiURL, secret, deviceID, dr.MaxID())
 	if err != dr {
 		return dr, dm, err
 	}
