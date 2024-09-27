@@ -1,5 +1,7 @@
 # Pullaway
 
+[![CI](https://github.com/donatj/pullaway/actions/workflows/ci.yml/badge.svg)](https://github.com/donatj/pullaway/actions/workflows/ci.yml)
+
 **Pullaway** is a lightweight Go [Pushover](https://pushover.net/) client cli and library. It  allows you to receive messages from Pushover in real-time via WebSocket. You can use it as a command-line tool or as a library in your Go projects.
 
 **Note:** Pullaway is a Pushover **client** for receiving messages from Pushover. It is **not** a library for sending messages via Pushover.
