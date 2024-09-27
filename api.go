@@ -28,6 +28,14 @@ func (pc *PushoverClient) GetApiURL() url.URL {
 	return *u
 }
 
+func (pc *PushoverClient) Login(username, password, twofa string) (*LoginResponse, error) {
+	return Login(pc.GetApiURL(), username, password, twofa)
+}
+
+func (pc *PushoverClient) Register(secret, name string) (*RegistrationResponse, error) {
+	return Register(pc.GetApiURL(), secret, name)
+}
+
 type AuthorizedClient struct {
 	UserSecret string
 	DeviceID   string
@@ -41,6 +49,18 @@ func NewAuthorizedClient(userSecret, deviceID string) *AuthorizedClient {
 		DeviceID:       deviceID,
 		PushoverClient: &PushoverClient{},
 	}
+}
+
+func (ac *AuthorizedClient) DownloadMessages() (*DownloadResponse, error) {
+	return DownloadMessages(ac.GetApiURL(), ac.UserSecret, ac.DeviceID)
+}
+
+func (ac *AuthorizedClient) DeleteMessages(id int64) (*DeleteResponse, error) {
+	return DeleteMessages(ac.GetApiURL(), ac.UserSecret, ac.DeviceID, id)
+}
+
+func (ac *AuthorizedClient) DownloadAndDeleteMessages() (*DownloadResponse, *DeleteResponse, error) {
+	return ac.PushoverClient.DownloadAndDeleteMessages(ac.UserSecret, ac.DeviceID)
 }
 
 // Helper method to make HTTP requests
@@ -75,7 +95,7 @@ func doRequest(method, urlStr string, body io.Reader, headers map[string]string)
 	return respBody, nil
 }
 
-func (pc *PushoverClient) Login(username, password, twofa string) (*LoginResponse, error) {
+func Login(api url.URL, username, password, twofa string) (*LoginResponse, error) {
 	// Build request body
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
@@ -90,10 +110,9 @@ func (pc *PushoverClient) Login(username, password, twofa string) (*LoginRespons
 		"Content-Type": writer.FormDataContentType(),
 	}
 
-	u := pc.GetApiURL()
-	u.Path = path.Join(u.Path, "/users/login.json")
+	api.Path = path.Join(api.Path, "/users/login.json")
 
-	respBody, err := doRequest("POST", u.String(), body, headers)
+	respBody, err := doRequest("POST", api.String(), body, headers)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +130,7 @@ func (pc *PushoverClient) Login(username, password, twofa string) (*LoginRespons
 	return jsonResponse, nil
 }
 
-func (pc *PushoverClient) Register(secret, name string) (*RegistrationResponse, error) {
+func Register(api url.URL, secret, name string) (*RegistrationResponse, error) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 	writer.WriteField("secret", secret)
@@ -123,10 +142,9 @@ func (pc *PushoverClient) Register(secret, name string) (*RegistrationResponse, 
 		"Content-Type": writer.FormDataContentType(),
 	}
 
-	u := pc.GetApiURL()
-	u.Path = path.Join(u.Path, "devices.json")
+	api.Path = path.Join(api.Path, "devices.json")
 
-	respBody, err := doRequest("POST", u.String(), body, headers)
+	respBody, err := doRequest("POST", api.String(), body, headers)
 	if err != nil {
 		return nil, err
 	}
@@ -144,22 +162,17 @@ func (pc *PushoverClient) Register(secret, name string) (*RegistrationResponse, 
 	return jsonResponse, nil
 }
 
-func (ac *AuthorizedClient) DownloadMessages() (*DownloadResponse, error) {
-	return ac.PushoverClient.DownloadMessages(ac.UserSecret, ac.DeviceID)
-}
+func DownloadMessages(api url.URL, secret, deviceID string) (*DownloadResponse, error) {
+	api.Path = path.Join(api.Path, "messages.json")
 
-func (pc *PushoverClient) DownloadMessages(secret, deviceID string) (*DownloadResponse, error) {
-	u := pc.GetApiURL()
-	u.Path = path.Join(u.Path, "messages.json")
-
-	q := u.Query()
+	q := api.Query()
 	q.Set("secret", secret)
 	q.Set("device_id", deviceID)
-	u.RawQuery = q.Encode()
+	api.RawQuery = q.Encode()
 
 	headers := map[string]string{}
 
-	respBody, err := doRequest("GET", u.String(), nil, headers)
+	respBody, err := doRequest("GET", api.String(), nil, headers)
 	if err != nil {
 		return nil, err
 	}
@@ -177,11 +190,7 @@ func (pc *PushoverClient) DownloadMessages(secret, deviceID string) (*DownloadRe
 	return jsonResponse, nil
 }
 
-func (ac *AuthorizedClient) DeleteMessages(id int64) (*DeleteResponse, error) {
-	return ac.PushoverClient.DeleteMessages(ac.UserSecret, ac.DeviceID, id)
-}
-
-func (pc *PushoverClient) DeleteMessages(secret, deviceID string, id int64) (*DeleteResponse, error) {
+func DeleteMessages(api url.URL, secret, deviceID string, id int64) (*DeleteResponse, error) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 	writer.WriteField("secret", secret)
@@ -192,10 +201,9 @@ func (pc *PushoverClient) DeleteMessages(secret, deviceID string, id int64) (*De
 		"Content-Type": writer.FormDataContentType(),
 	}
 
-	u := pc.GetApiURL()
-	u.Path = path.Join(u.Path, "devices", deviceID, "update_highest_message.json")
+	api.Path = path.Join(api.Path, "devices", deviceID, "update_highest_message.json")
 
-	respBody, err := doRequest("POST", u.String(), body, headers)
+	respBody, err := doRequest("POST", api.String(), body, headers)
 	if err != nil {
 		return nil, err
 	}
@@ -213,17 +221,13 @@ func (pc *PushoverClient) DeleteMessages(secret, deviceID string, id int64) (*De
 	return jsonResponse, nil
 }
 
-func (ac *AuthorizedClient) DownloadAndDeleteMessages() (*DownloadResponse, *DeleteResponse, error) {
-	return ac.PushoverClient.DownloadAndDeleteMessages(ac.UserSecret, ac.DeviceID)
-}
-
 func (pc *PushoverClient) DownloadAndDeleteMessages(secret, deviceID string) (*DownloadResponse, *DeleteResponse, error) {
-	dr, err := pc.DownloadMessages(secret, deviceID)
+	dr, err := DownloadMessages(pc.GetApiURL(), secret, deviceID)
 	if err != nil {
 		return dr, nil, err
 	}
 
-	dm, err := pc.DeleteMessages(secret, deviceID, dr.MaxID())
+	dm, err := DeleteMessages(pc.GetApiURL(), secret, deviceID, dr.MaxID())
 	if err != dr {
 		return dr, dm, err
 	}
