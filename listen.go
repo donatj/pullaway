@@ -4,49 +4,58 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"log/slog"
+	"time"
 
 	"golang.org/x/net/websocket"
 )
 
 var (
-	ErrNeedReconnect      = fmt.Errorf("need to reconnect")
-	ErrWebsocketPermanent = fmt.Errorf("permanent error")
-	ErrSessionIssue       = fmt.Errorf("session issue")
+	ErrWebsocketConnectFail = fmt.Errorf("error connecting to WebSocket")
+	ErrWebsocketLoginFail   = fmt.Errorf("error logging in to WebSocket")
+	ErrWebsocketReadFail    = fmt.Errorf("error reading from WebSocket")
+	ErrNeedReconnect        = fmt.Errorf("need to reconnect")
+	ErrWebsocketPermanent   = fmt.Errorf("permanent error")
+	ErrSessionIssue         = fmt.Errorf("session issue")
 )
 
-func ListenWithReconnect(deviceID string, secret string, ac *AuthorizedClient, ml MessageCallback) error {
+func ListenWithReconnect(deviceID string, secret string, ml MessageCallback) error {
 connect:
 	for {
-		err := Listen(deviceID, secret, ac, ml)
+		err := Listen(deviceID, secret, ml)
+		if errors.Is(err, ErrWebsocketPermanent) || errors.Is(err, ErrSessionIssue) {
+			return err
+		}
+
 		if errors.Is(err, ErrNeedReconnect) {
+			time.Sleep(5 * time.Second)
 			continue connect
 		}
 
-		return err
+		time.Sleep(15 * time.Second)
+		slog.Error("error listening to WebSocket", slog.String("error", err.Error()))
 	}
 }
 
-type MessageListener func(*DownloadResponse) error
-
 type MessageCallback func() error
 
-func Listen(deviceID string, secret string, ac *AuthorizedClient, ml MessageCallback) error {
+func Listen(deviceID string, secret string, ml MessageCallback) error {
 	origin := "http://localhost/"
 	url := "wss://client.pushover.net/push"
 
 	// Establish WebSocket connection
 	ws, err := websocket.Dial(url, "", origin)
 	if err != nil {
-		log.Fatalf("Failed to connect to WebSocket: %v", err)
+		return errors.Join(ErrWebsocketConnectFail, err)
 	}
 	defer ws.Close()
 
-	log.Println("Connected to WebSocket.")
+	slog.Info("connected to WebSocket")
 
 	loginMessage := fmt.Sprintf("login:%s:%s\n", deviceID, secret)
 	_, err = ws.Write([]byte(loginMessage))
 	if err != nil {
-		log.Fatalf("Error writing login message: %v", err)
+		return errors.Join(ErrWebsocketLoginFail, err)
 	}
 
 	for {
@@ -54,7 +63,7 @@ func Listen(deviceID string, secret string, ac *AuthorizedClient, ml MessageCall
 		// Read message from WebSocket
 		n, err := ws.Read(msg)
 		if err != nil {
-			return fmt.Errorf("error reading from WebSocket: %w", err)
+			return errors.Join(ErrWebsocketReadFail, err)
 		}
 
 		// Print the message received
@@ -63,20 +72,11 @@ func Listen(deviceID string, secret string, ac *AuthorizedClient, ml MessageCall
 		for _, m := range msg[:n] {
 			switch m {
 			case '#': // Heartbeat
-				log.Println("PONG")
+				// PONG
 			case '!': // Message
 				if err := ml(); err != nil {
 					return err
 				}
-
-				// messages, _, err := ac.DownloadAndDeleteMessages()
-				// if err != nil {
-				// 	log.Printf("error downloading messages: %v", err)
-				// } else {
-				// 	if err := ml(messages); err != nil {
-				// 		return err
-				// 	}
-				// }
 			case 'R': // Reconnect
 				return ErrNeedReconnect
 			case 'E': // Error, Permanent

@@ -45,7 +45,7 @@ func (st *listenCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{
 
 	downloadAndDisplay()
 
-	err := pullaway.ListenWithReconnect(st.ac.DeviceID, st.ac.UserSecret, st.ac, downloadAndDisplay)
+	err := pullaway.ListenWithReconnect(st.ac.DeviceID, st.ac.UserSecret, downloadAndDisplay)
 	if err != nil {
 		log.Printf("Error listening: %v", err)
 		return subcommands.ExitFailure
