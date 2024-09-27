@@ -7,12 +7,30 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"text/template"
 
 	"github.com/donatj/pullaway"
+	"github.com/donatj/pullaway/assets"
 	"github.com/gen2brain/beeep"
 	"github.com/google/subcommands"
 )
+
+var iconPath string
+
+func init() {
+	tdir, err := os.MkdirTemp("", "pullaway-assets")
+	if err != nil {
+		log.Fatalf("error creating temporary directory: %v", err)
+	}
+
+	iconPath = filepath.Join(tdir, "pullaway.png")
+
+	err = os.WriteFile(iconPath, assets.Icon, 0644)
+	if err != nil {
+		log.Fatalf("error writing icon file: %v", err)
+	}
+}
 
 type listenCmd struct {
 	ac *pullaway.AuthorizedClient
@@ -123,7 +141,7 @@ func displayMessageText(m *pullaway.Messages) error {
 }
 
 func displayMessageNotification(m *pullaway.Messages) error {
-	beeep.Notify(fmt.Sprintf("%s: %s", m.App, m.Title), m.Message, "")
+	beeep.Notify(fmt.Sprintf("%s: %s", m.App, m.Title), m.Message, iconPath)
 
 	return nil
 }
