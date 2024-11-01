@@ -5,8 +5,9 @@ go 1.23.1
 require (
 	github.com/99designs/keyring v1.2.2
 	github.com/charmbracelet/huh v0.6.0
+	github.com/gen2brain/beeep v0.0.0-20240516210008-9c006672e7f4
 	github.com/google/subcommands v1.2.0
-	golang.org/x/net v0.29.0
+	golang.org/x/net v0.30.0
 )
 
 require (
@@ -24,7 +25,6 @@ require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/dvsekhvalnov/jose2go v1.5.0 // indirect
 	github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f // indirect
-	github.com/gen2brain/beeep v0.0.0-20240516210008-9c006672e7f4 // indirect
 	github.com/go-toast/toast v0.0.0-20190211030409-01e6764cf0a4 // indirect
 	github.com/godbus/dbus v0.0.0-20190726142602-4481cbc300e2 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
@@ -42,7 +42,7 @@ require (
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/tadvi/systray v0.0.0-20190226123456-11a2b8fa57af // indirect
 	golang.org/x/sync v0.8.0 // indirect
-	golang.org/x/sys v0.25.0 // indirect
-	golang.org/x/term v0.24.0 // indirect
-	golang.org/x/text v0.18.0 // indirect
+	golang.org/x/sys v0.26.0 // indirect
+	golang.org/x/term v0.25.0 // indirect
+	golang.org/x/text v0.19.0 // indirect
 )
