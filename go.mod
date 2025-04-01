@@ -1,13 +1,14 @@
 module github.com/donatj/pullaway
 
 go 1.23.1
+toolchain go1.24.1
 
 require (
 	github.com/99designs/keyring v1.2.2
 	github.com/charmbracelet/huh v0.6.0
 	github.com/gen2brain/beeep v0.0.0-20240516210008-9c006672e7f4
 	github.com/google/subcommands v1.2.0
-	golang.org/x/net v0.35.0
+	golang.org/x/net v0.38.0
 )
 
 require (
@@ -41,8 +42,8 @@ require (
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/tadvi/systray v0.0.0-20190226123456-11a2b8fa57af // indirect
-	golang.org/x/sync v0.11.0 // indirect
-	golang.org/x/sys v0.30.0 // indirect
-	golang.org/x/term v0.29.0 // indirect
-	golang.org/x/text v0.22.0 // indirect
+	golang.org/x/sync v0.12.0 // indirect
+	golang.org/x/sys v0.31.0 // indirect
+	golang.org/x/term v0.30.0 // indirect
+	golang.org/x/text v0.23.0 // indirect
 )
