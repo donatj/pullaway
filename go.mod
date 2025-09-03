@@ -9,7 +9,7 @@ require (
 	github.com/charmbracelet/huh v0.7.0
 	github.com/gen2brain/beeep v0.11.1
 	github.com/google/subcommands v1.2.0
-	golang.org/x/net v0.42.0
+	golang.org/x/net v0.43.0
 )
 
 require (
@@ -52,7 +52,7 @@ require (
 	github.com/tadvi/systray v0.0.0-20190226123456-11a2b8fa57af // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	golang.org/x/sync v0.16.0 // indirect
-	golang.org/x/sys v0.34.0 // indirect
-	golang.org/x/term v0.33.0 // indirect
-	golang.org/x/text v0.27.0 // indirect
+	golang.org/x/sys v0.35.0 // indirect
+	golang.org/x/term v0.34.0 // indirect
+	golang.org/x/text v0.28.0 // indirect
 )
