@@ -53,7 +53,7 @@ func (st *listenCmd) SetFlags(f *flag.FlagSet) {
 	f.StringVar(&st.templateStr, "template", "", "Go template for formatting output (used with -format=template)")
 }
 
-func (st *listenCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
+func (st *listenCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...any) subcommands.ExitStatus {
 	if st.ac == nil {
 		log.Println("No authorized client found. Please run 'init' first.")
 		return subcommands.ExitFailure
