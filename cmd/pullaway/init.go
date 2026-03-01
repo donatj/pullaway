@@ -29,7 +29,7 @@ func (c *initCmd) Usage() string {
 func (st *initCmd) SetFlags(f *flag.FlagSet) {
 }
 
-func (st *initCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
+func (st *initCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...any) subcommands.ExitStatus {
 	var username, password, twofa string
 
 	var secret string
