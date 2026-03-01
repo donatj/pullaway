@@ -7,7 +7,7 @@ toolchain go1.24.1
 require (
 	github.com/99designs/keyring v1.2.2
 	github.com/charmbracelet/huh v0.8.0
-	github.com/gen2brain/beeep v0.11.1
+	github.com/gen2brain/beeep v0.11.2
 	github.com/google/subcommands v1.2.0
 	golang.org/x/net v0.47.0
 )
