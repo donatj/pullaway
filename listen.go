@@ -23,10 +23,10 @@ var (
 // LeveledLogger is an interface for loggers or logger wrappers that support leveled logging.
 // The methods take a message string and optional variadic key-value pairs.
 type LeveledLogger interface {
-	Error(string, ...interface{})
-	Info(string, ...interface{})
-	Debug(string, ...interface{})
-	Warn(string, ...interface{})
+	Error(string, ...any)
+	Info(string, ...any)
+	Debug(string, ...any)
+	Warn(string, ...any)
 }
 
 type Listener struct {

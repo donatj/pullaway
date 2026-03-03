@@ -1,8 +1,6 @@
 module github.com/donatj/pullaway
 
-go 1.24.0
-
-toolchain go1.24.1
+go 1.26.0
 
 require (
 	github.com/99designs/keyring v1.2.2
