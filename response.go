@@ -5,7 +5,7 @@ import "fmt"
 type PushoverClientResponse struct {
 	Status  int    `json:"status"`
 	Request string `json:"request"`
-	Errors  Errors `json:"errors,omitempty"`
+	Errors  Errors `json:"errors"`
 }
 
 type Errors struct {
